@@ -142,16 +142,14 @@ func (p *Pool) Close() {
 		// Close the channel and shut down all the connections within it.
 		close(conns)
 		for conn := range conns {
-			if conn.ClientConn != nil {
-				conn.ClientConn.Close()
-			}
+			conn.closeClientConn()
+
 		}
 
 		// close all conns in quarintine
 		for _, conn := range q {
-			if conn.ClientConn != nil {
-				conn.ClientConn.Close()
-			}
+			conn.closeClientConn()
+
 		}
 	}
 }
@@ -180,9 +178,7 @@ func (c *ClientConn) Close() {
 	if c.clientCount > 0 {
 		c.clientCount--
 		if c.quarintineKey != 0 && c.clientCount == 0 {
-			if c.ClientConn != nil {
-				c.ClientConn.Close()
-			}
+			c.closeClientConn()
 			c.pool.Lock()
 			delete(c.pool.quarintine, c.quarintineKey)
 			c.pool.Unlock()
@@ -216,9 +212,7 @@ func (c *ClientConn) quarintine() {
 	c.Lock()
 	defer c.Unlock()
 	if c.clientCount == 0 {
-		if c.ClientConn != nil {
-			c.ClientConn.Close()
-		}
+		c.closeClientConn()
 	} else {
 		for {
 			key := rand.Int()
@@ -230,4 +224,11 @@ func (c *ClientConn) quarintine() {
 			}
 		}
 	}
+}
+
+func (c *ClientConn) closeClientConn() {
+	if c.ClientConn == nil {
+		return
+	}
+	c.ClientConn.Close()
 }
