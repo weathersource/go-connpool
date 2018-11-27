@@ -6,8 +6,6 @@ import (
 	"testing"
 	"time"
 
-	// "fmt"
-
 	assert "github.com/stretchr/testify/assert"
 	grpc "google.golang.org/grpc"
 )
