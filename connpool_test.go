@@ -72,9 +72,9 @@ func TestPool1(t *testing.T) {
 // Close all clients for a healthy connection
 // Create unhealthy connection with no clients
 // Create unhealthy connection with clients
-// Close all clients for a quarintined connection
+// Close all clients for a quarantined connection
 // Close pool with non-empty healthy connection
-// Close pool with non-empty quarintine connection
+// Close pool with non-empty quarantine connection
 func TestPool2(t *testing.T) {
 	assert := assert.New(t)
 	ctx := context.Background()
@@ -128,7 +128,7 @@ func TestPool2(t *testing.T) {
 	assert.Equal(2, conn1.clientCount)
 	assert.Equal(2, conn2.clientCount)
 	assert.Equal(2, conn3.clientCount)
-	assert.Equal(0, len(pool.quarintine))
+	assert.Equal(0, len(pool.quarantine))
 
 	// Close all clients for a healthy connection (Group 1)
 	conn1.Close()
@@ -140,37 +140,37 @@ func TestPool2(t *testing.T) {
 	time.Sleep(750 * time.Microsecond)
 
 	// Create unhealthy connection with no clients
-	// This will send Group 1 to quarintine
+	// This will send Group 1 to quarantine
 	// but since it is empty, it will just get closed
 	conn9, err9 := pool.Get(ctx)
 	assert.NotNil(conn9)
 	assert.Nil(err9)
-	assert.Equal(0, len(pool.quarintine))
+	assert.Equal(0, len(pool.quarantine))
 
 	// Create unhealthy connection with clients
-	// This will send Group 2 to quarintine
+	// This will send Group 2 to quarantine
 	conn10, err10 := pool.Get(ctx)
 	assert.NotNil(conn10)
 	assert.Nil(err10)
-	assert.Equal(1, len(pool.quarintine))
+	assert.Equal(1, len(pool.quarantine))
 
-	// Close all clients for a quarintined connection (Group 2)
-	// This will close out Group 2 and delete it from quarintine
+	// Close all clients for a quarantined connection (Group 2)
+	// This will close out Group 2 and delete it from quarantine
 	conn2.Close()
 	assert.Equal(1, conn2.clientCount)
 	conn6.Close()
 	assert.Equal(0, conn6.clientCount)
-	assert.Equal(0, len(pool.quarintine))
+	assert.Equal(0, len(pool.quarantine))
 
 	// Create unhealthy connection with clients
-	// This will send Group 3 to quarintine
+	// This will send Group 3 to quarantine
 	conn11, err11 := pool.Get(ctx)
 	assert.NotNil(conn11)
 	assert.Nil(err11)
-	assert.Equal(1, len(pool.quarintine))
+	assert.Equal(1, len(pool.quarantine))
 
 	// We still have valid connections in Group 1, plus conn9, conn10, and conn11
-	// We still have connections in quarintine (Group 3)
+	// We still have connections in quarantine (Group 3)
 	// Close the pool
 	pool.Close()
 	assert.True(pool.isClosed())

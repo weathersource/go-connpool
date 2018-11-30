@@ -14,7 +14,7 @@ import (
 type Pool struct {
 	sync.RWMutex
 	conns       chan *ClientConn
-	quarintine  map[int]*ClientConn
+	quarantine  map[int]*ClientConn
 	factory     Factory
 	idleTimeout time.Duration
 	lifeTimeout time.Duration
@@ -24,7 +24,7 @@ type Pool struct {
 // Factory is a function type creating a GRPC connection.
 type Factory func() (*grpc.ClientConn, error)
 
-// New creates a new connection pool. The factory parameter accpets a function
+// New creates a new connection pool. The factory parameter accepts a function
 // that creates new connections. The capacity parameter sets the maximum
 // capacity of healthy connections inside the connection pool. The idleTimeout
 // parameter sets a duration after which, if no new requests are made on the
@@ -41,7 +41,7 @@ func New(
 	}
 	p := &Pool{
 		conns:       make(chan *ClientConn, capacity),
-		quarintine:  make(map[int]*ClientConn),
+		quarantine:  make(map[int]*ClientConn),
 		factory:     factory,
 		idleTimeout: idleTimeout,
 		lifeTimeout: lifeTimeout,
@@ -89,7 +89,7 @@ func (p *Pool) Get(context.Context) (*ClientConn, error) {
 				}
 				avgClientCount = (avgClientCount*i + clientCount) / (i + 1)
 			} else {
-				conn.quarintine()
+				conn.quarantine()
 				break
 			}
 		}
@@ -121,7 +121,7 @@ func (p *Pool) Get(context.Context) (*ClientConn, error) {
 // within the connection pool.
 func (p *Pool) Close() {
 
-	// The zero value of a channel is nil, so conns is initally nil
+	// The zero value of a channel is nil, so conns is initially nil
 	var (
 		conns chan *ClientConn
 		q     map[int]*ClientConn
@@ -131,8 +131,8 @@ func (p *Pool) Close() {
 	if p.closed == false {
 		conns = p.conns
 		p.conns = nil
-		q = p.quarintine
-		p.quarintine = nil
+		q = p.quarantine
+		p.quarantine = nil
 		p.closed = true
 	}
 	p.Unlock()
@@ -146,7 +146,7 @@ func (p *Pool) Close() {
 
 		}
 
-		// close all conns in quarintine
+		// close all conns in quarantine
 		for _, conn := range q {
 			conn.closeClientConn()
 
@@ -164,7 +164,7 @@ type ClientConn struct {
 	*grpc.ClientConn
 	sync.RWMutex
 	pool          *Pool
-	quarintineKey int
+	quarantineKey int
 	expireTime    time.Time
 	lastTime      time.Time
 	clientCount   int
@@ -177,10 +177,10 @@ func (c *ClientConn) Close() {
 	c.Lock()
 	if c.clientCount > 0 {
 		c.clientCount--
-		if c.quarintineKey != 0 && c.clientCount == 0 {
+		if c.quarantineKey != 0 && c.clientCount == 0 {
 			c.closeClientConn()
 			c.pool.Lock()
-			delete(c.pool.quarintine, c.quarintineKey)
+			delete(c.pool.quarantine, c.quarantineKey)
 			c.pool.Unlock()
 		}
 	}
@@ -204,11 +204,11 @@ func (c *ClientConn) checkHealth() bool {
 	return c.expireTime.After(now) && c.lastTime.Add(c.pool.idleTimeout).After(now)
 }
 
-// quarintine removes a connection from the connection pool, and places it in
-// quarintine where existing clients can complete the requests they have made on
+// quarantine removes a connection from the connection pool, and places it in
+// quarantine where existing clients can complete the requests they have made on
 // that connection. After all clients are done with the connection, it will be
 // terminated.
-func (c *ClientConn) quarintine() {
+func (c *ClientConn) quarantine() {
 	c.Lock()
 	defer c.Unlock()
 	if c.clientCount == 0 {
@@ -216,10 +216,10 @@ func (c *ClientConn) quarintine() {
 	} else {
 		for {
 			key := rand.Int()
-			_, ok := c.pool.quarintine[key]
+			_, ok := c.pool.quarantine[key]
 			if !ok && key > 0 {
-				c.pool.quarintine[key] = c
-				c.quarintineKey = key
+				c.pool.quarantine[key] = c
+				c.quarantineKey = key
 				break
 			}
 		}
