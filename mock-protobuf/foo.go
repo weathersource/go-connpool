@@ -8,7 +8,7 @@ import (
 // FooRequest is a mock protobuf request message
 type FooRequest struct{}
 
-// FooRequest is a mock protobuf response message
+// FooResponse is a mock protobuf response message
 type FooResponse struct{}
 
 // FooServiceClient is a mock protobuf service client interface
