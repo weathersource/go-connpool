@@ -6,7 +6,7 @@ import (
 	"time"
 
 	connpool "github.com/weathersource/go-connpool"
-	pb "github.com/weathersource/go-connpool/mock-protobuf"
+	pb "github.com/weathersource/go-connpool/foo-proto"
 	context "golang.org/x/net/context"
 	grpc "google.golang.org/grpc"
 )
@@ -25,7 +25,7 @@ func Example() {
 
 	// set up the response channel for goroutines
 	type Res struct {
-		out *(pb.FooResponse) // the GRPC response message
+		out *pb.BarResponse // the GRPC response message
 		err error
 	}
 	c := make(chan Res, reqCnt)
@@ -46,8 +46,8 @@ func Example() {
 			if nil != err {
 				c <- Res{err: err}
 			} else {
-				client := pb.NewFooServiceClient(conn.ClientConn)
-				out, err := client.Foo(context.Background(), &(pb.FooRequest{}))
+				client := pb.NewFooClient(conn.ClientConn)
+				out, err := client.Bar(context.Background(), &pb.BarRequest{})
 				c <- Res{
 					out: out,
 					err: err,
