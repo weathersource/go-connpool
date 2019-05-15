@@ -30,6 +30,7 @@ type Factory func() (*grpc.ClientConn, error)
 // parameter sets a duration after which, if no new requests are made on the
 // connection, the connection is recycled. The lifeTimeout parameter sets a
 // duration that is the maximum lifetime of a connection before it is recycled.
+// Negative idleTimeout or lifeTimeout values mean no timeouts.
 func New(
 	factory Factory,
 	capacity int,
@@ -187,7 +188,7 @@ func (c *ClientConn) Close() {
 	c.Unlock()
 }
 
-// addClient communicates to a connection that a new GRPC client is utelizing
+// addClient communicates to a connection that a new GRPC client is utilizing
 // the connection.
 func (c *ClientConn) addClient() {
 	c.Lock()
@@ -201,6 +202,13 @@ func (c *ClientConn) checkHealth() bool {
 	c.RLock()
 	defer c.RUnlock()
 	now := time.Now()
+	if int64(c.pool.idleTimeout) < 0 && int64(c.pool.lifeTimeout) < 0 {
+		return true
+	} else if int64(c.pool.idleTimeout) < 0 {
+		return c.expireTime.After(now)
+	} else if int64(c.pool.lifeTimeout) < 0 {
+		return c.lastTime.Add(c.pool.idleTimeout).After(now)
+	}
 	return c.expireTime.After(now) && c.lastTime.Add(c.pool.idleTimeout).After(now)
 }
 
