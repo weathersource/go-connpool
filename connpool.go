@@ -122,6 +122,10 @@ func (p *Pool) Get(context.Context) (*ClientConn, error) {
 // within the connection pool.
 func (p *Pool) Close() {
 
+	if p == nil {
+		return
+	}
+
 	// The zero value of a channel is nil, so conns is initially nil
 	var (
 		conns chan *ClientConn
