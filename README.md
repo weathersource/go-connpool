@@ -1,8 +1,6 @@
 # go-connpool
 
-[![Build Status](https://travis-ci.com/weathersource/go-connpool.svg?branch=master)](https://travis-ci.com/weathersource/go-connpool)
-[![Codevov](https://img.shields.io/codecov/c/github/weathersource/go-connpool.svg)](https://codecov.io/gh/weathersource/go-connpool)
-[![Go Report Card](https://goreportcard.com/badge/github.com/weathersource/go-connpool)](https://goreportcard.com/report/github.com/weathersource/go-connpool)
+[![CircleCI](https://circleci.com/gh/weathersource/go-connpool.svg?style=shield)](https://circleci.com/gh/weathersource/go-connpool)
 [![GoDoc](https://img.shields.io/badge/godoc-ref-blue.svg)](https://godoc.org/github.com/weathersource/go-connpool) |
 
 Package connpool provides GRPC connection pooling. This allows clients to distribute
