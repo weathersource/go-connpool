@@ -50,7 +50,7 @@ func New(
 	return p
 }
 
-// Get retreives a healthy connection for use with a GRPC client.
+// Get retrieves a healthy connection for use with a GRPC client.
 func (p *Pool) Get(context.Context) (*ClientConn, error) {
 	var (
 		err            error
